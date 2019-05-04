@@ -508,34 +508,32 @@ Lambda表达式与匿名内部类存在如下区别：
 
 新增了一个java.time包，包含如下常用的类
 
-$$
-Clock：获取指定时区的当前日期、时间，可取代System类的currentTimeMillis()方法
-
-Duration：持续时间，获取一段时间
-
-Instant：一个具体的时刻，精确到纳秒
-
-LocalDate：不带时区的日期，如：2007-12-03
-
-LocalTime：不带时区的时间，如：10:15:30
-
-LocalDateTime：不带时区的日期、时间，如2007-12-03T10:15:30
-
-MonthDay：月日，如04-02
-
-Year：年。如：2019
-
-YearMonth：年月，如2019-11
-
-ZonedDateTime：一个时区化的日期、时间
-
-ZoneId：一个时区
-
-DayOfWeek：枚举类，定义了周一到周日的枚举值
-
-Month：枚举类，定义了一月到十二月的枚举值
-$$
-
+> Clock：获取指定时区的当前日期、时间，可取代System类的currentTimeMillis()方法
+>
+> Duration：持续时间，获取一段时间
+>
+> Instant：一个具体的时刻，精确到纳秒
+>
+> LocalDate：不带时区的日期，如：2007-12-03
+>
+> LocalTime：不带时区的时间，如：10:15:30
+>
+> LocalDateTime：不带时区的日期、时间，如2007-12-03T10:15:30
+>
+> MonthDay：月日，如04-02
+>
+> Year：年。如：2019
+>
+> YearMonth：年月，如2019-11
+>
+> ZonedDateTime：一个时区化的日期、时间
+>
+> ZoneId：一个时区
+>
+> DayOfWeek：枚举类，定义了周一到周日的枚举值
+>
+> Month：枚举类，定义了一月到十二月的枚举值
+>
 
 ```java
 
@@ -733,13 +731,14 @@ public void CollectionStreamTest() {
 
 java.util.function包下预定义了大量函数式接口，典型的包含如下4类接口：
 
-XxxFunciton：这类接口中通常包含一个apply（）抽象方法，该方法对参数进行处理、转换（apply()方法的处理逻辑有Lambda表达式来实现），然后返回一个新的值。该函数式接口通常用于对指定数据进行转换处理。
-
-XxxConsumer：这类接口中通常包含一个accept（）抽象方法，该方法与XxxFunciton接口中的apply（）方法基本相似，也负责对参数进行处理，只是改方法不会返回处理结果。
-
-XxxPredicate：这类接口中通常包含一个test（）抽象方法，该方法通常用来对参数进行某种判断（test()方法的判断逻辑由Lambda表达式来实现），然后返回一个boolean值。该接口通常用于判断参数是否满足特定条件，经常用于进行筛滤数据。
-
-XxxSupplier：这类接口中通常包含一个getAsXxx()抽象方法，该方法不需要输入参数，该方法会按某种逻辑算法（getAsXxx()方法的逻辑算法有Lambda表达式来实现）返回一个数据.
+> XxxFunciton：这类接口中通常包含一个apply（）抽象方法，该方法对参数进行处理、转换（apply()方法的处理逻辑有Lambda表达式来实现），然后返回一个新的值。该函数式接口通常用于对指定数据进行转换处理。
+>
+> XxxConsumer：这类接口中通常包含一个accept（）抽象方法，该方法与XxxFunciton接口中的apply（）方法基本相似，也负责对参数进行处理，只是改方法不会返回处理结果。
+>
+> XxxPredicate：这类接口中通常包含一个test（）抽象方法，该方法通常用来对参数进行某种判断（test()方法的判断逻辑由Lambda表达式来实现），然后返回一个boolean值。该接口通常用于判断参数是否满足特定条件，经常用于进行筛滤数据。
+>
+> XxxSupplier：这类接口中通常包含一个getAsXxx()抽象方法，该方法不需要输入参数，该方法会按某种逻辑算法（getAsXxx()方法的逻辑算法有Lambda表达式来实现）返回一个数据.
+>
 
 
 

@@ -508,6 +508,7 @@ Lambda表达式与匿名内部类存在如下区别：
 
 新增了一个java.time包，包含如下常用的类
 
+$$
 Clock：获取指定时区的当前日期、时间，可取代System类的currentTimeMillis()方法
 
 Duration：持续时间，获取一段时间
@@ -533,6 +534,8 @@ ZoneId：一个时区
 DayOfWeek：枚举类，定义了周一到周日的枚举值
 
 Month：枚举类，定义了一月到十二月的枚举值
+$$
+
 
 ```java
 

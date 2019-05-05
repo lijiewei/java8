@@ -508,32 +508,31 @@ Lambda表达式与匿名内部类存在如下区别：
 
 新增了一个java.time包，包含如下常用的类
 
-> Clock：获取指定时区的当前日期、时间，可取代System类的currentTimeMillis()方法
->
-> Duration：持续时间，获取一段时间
->
-> Instant：一个具体的时刻，精确到纳秒
->
-> LocalDate：不带时区的日期，如：2007-12-03
->
-> LocalTime：不带时区的时间，如：10:15:30
->
-> LocalDateTime：不带时区的日期、时间，如2007-12-03T10:15:30
->
-> MonthDay：月日，如04-02
->
-> Year：年。如：2019
->
-> YearMonth：年月，如2019-11
->
-> ZonedDateTime：一个时区化的日期、时间
->
-> ZoneId：一个时区
->
-> DayOfWeek：枚举类，定义了周一到周日的枚举值
->
-> Month：枚举类，定义了一月到十二月的枚举值
->
+Clock：获取指定时区的当前日期、时间，可取代System类的currentTimeMillis()方法
+
+Duration：持续时间，获取一段时间
+
+Instant：一个具体的时刻，精确到纳秒
+
+LocalDate：不带时区的日期，如：2007-12-03
+
+LocalTime：不带时区的时间，如：10:15:30
+
+LocalDateTime：不带时区的日期、时间，如2007-12-03T10:15:30
+
+MonthDay：月日，如04-02
+
+Year：年。如：2019
+
+YearMonth：年月，如2019-11
+
+ZonedDateTime：一个时区化的日期、时间
+
+ZoneId：一个时区
+
+DayOfWeek：枚举类，定义了周一到周日的枚举值
+
+Month：枚举类，定义了一月到十二月的枚举值
 
 ```java
 
@@ -597,7 +596,77 @@ public void ParseTest() {
 
 #### 增强的Iterator遍历集合元素
 
+```java
+//使用Lambda表达式来遍历集合元素
+void forEachRemaining(Consumer action)
+```
+
+```java
+@Test
+public void IteratorTest() {
+    Collection books = new HashSet();
+    books.add("aa");
+    books.add("bb");
+    books.add("cc");
+    books.add("dd");
+    Iterator iterator = books.iterator();
+    //使用Lambda表达式来遍历集合元素
+    iterator.forEachRemaining(obj -> System.out.println("迭代元素："+obj));
+}
+```
+
 #### 新增的Predicate操作集合
+
+Java8为Collection集合新增了一个removeIf(Predicate filter)方法，该方法将会批量删除符合filter条件的所有元素。
+
+Predicate 也是函数式接口,可以充分简化集合的运算。
+
+Predicate 接口中包含一个test（）抽象方法，该方法通常用来对参数进行某种判断（test()方法的判断逻辑由Lambda表达式来实现），然后返回一个boolean值。该接口通常用于判断参数是否满足特定条件，经常用于进行筛滤数据
+
+```java
+@Test
+public void PredicateTest() {
+    Collection<String> books =  new HashSet<>();
+    books.add("a");
+    books.add("bb");
+    books.add("ccc");
+    books.add("ddd");
+    //过滤长度大于2的
+    books.removeIf(ele ->ele.length()>2 );
+    books.forEach(System.out::println);
+}
+```
+
+```java
+@Test
+public void PredicateTest2() {
+    Collection<String> books =  new HashSet<>();
+    books.add("a");
+    books.add("bb");
+    books.add("ccc");
+    books.add("ddd");
+    //统计包含“bb”子串的数量
+    System.out.println(calAll(books, ele -> ((String) ele).contains("bb")));
+    //统计包含“cc”子串的数量
+    System.out.println(calAll(books, ele -> ((String) ele).contains("cc")));
+    //统计字符串长度大于2的数量
+    System.out.println(calAll(books, ele -> ((String) ele).length() > 2));
+
+}
+
+private int calAll(Collection<String> books, Predicate p){
+    int total = 0;
+    for (String book : books) {
+        //使用Predicate的test()方法判断该对象是否满足Predicate指定的条件
+        if(p.test(book)){
+            total ++;
+        }
+    }
+    return total;
+}
+```
+
+
 
 #### 新增的Stream操作集合
 
@@ -719,9 +788,135 @@ public void CollectionStreamTest() {
 
 #### 改进的List接口和ListIterator接口
 
+Java8为List接口添加了如下两个默认方法
+
+```java
+//根据operator指定的计算规则重新设置List集合的所有元素
+void replaceAll(UnaryOperator operator)
+
+//根据Comparator参数对List集合的元素排序
+void sort(Comparator c)
+```
+
+```java
+@Test
+public void listTest() {
+    List<String> books = new ArrayList<>();
+    books.add("a");
+    books.add("bb");
+    books.add("ccc");
+    books.add("dddd");
+    books.sort((o1, o2) -> o2.length() - o1.length());
+    System.out.println(books);//[dddd, ccc, bb, a]
+    //将每个字符串的长度作为新的集合元素
+    books.replaceAll(ele -> String.valueOf(ele.length()));
+    System.out.println(books);//[1, 2, 3, 4]
+}
+```
+
+List除iterator()方法外，额外提供了一个listIterator()方法，该方法返回一个ListIterator对象，ListIterator接口继承了Iterator接口，提供了专门操作List的方法。
+
+Iterator向后迭代，只能删除元素；ListIterator可以向前迭代，还可以添加元素
+
+ListIterator接口在Iterator接口基础上增加了如下方法：
+
+```java
+//返回该迭代器关联的集合是否还有上一个元素
+boolean hasPrevious()
+
+//返回该迭代器的上一个元素
+Object previous
+
+//在指定位置插入一个元素
+void add(Object o)
+```
+
+```java
+@Test
+public void ListIteratorTest() {
+    List<String> books = new ArrayList<>();
+    books.add("a");
+    ListIterator<String> listIterator = books.listIterator();
+    while (listIterator.hasNext()){
+        listIterator.next();
+        listIterator.add("b");
+    }
+    //反向迭代
+    while (listIterator.hasPrevious()){
+        System.out.println(listIterator.previous());//b a
+    }
+}
+```
+
 #### 为Map新增的方法
 
+Java8为Map增加了如下方法：
+
+```java
+//移除指定key和value的元素
+boolean remove(Object key, Object value)
+
+//使用remappingFunction根据原key-value对计算一个新value，新value不为null则替换；新value为null则删除原key-value对；新旧value同时为null则不改变任何key-value对，直接返回null
+Object compute(Object key, BiFunction remappingFunction)
+
+//如果key对应value为null,使用mappingFunction根据key计算一个新value，新value不为null则替换；如果map中不存在key则添加一组key-value对
+Object computeIfAbsent(Object key, Function mappingFunction)
+
+//如果key对应value为null,使用remappingFunction根据旧key、value计算一个新value，新value不为null则替换；如果新value为null则删除旧key-value对
+Object computeIfPresent(Object key, BiFunction remappingFunction)
+
+//遍历key-value对
+void forEach(BiConsumer action)
+
+//获取key对应value，如果key不存在则返回defaultValue
+Object getOrDefault(Object key, V defaultValue)
+
+//如果key对应value为null则用传入的value替换旧value（可能是添加key-value对），如果key对应value不为null，则用remappingFunction根据旧value、传入value计算一个新value并替换
+Object merge(Object key, Object value, BiFunction remappingFunction)
+
+//key对应value为null，用传入value替换原来的null值
+Object putIfAbsent(Object key, Object value)
+    
+//key对应的value替换成新value；如果key不存在则不会添加，而是返回null
+Object replace(Object key, Object value)
+    
+//将key-value对的原value替换成新value
+boolean replace(K key, V oldValue, V newValue)
+    
+//使用BiFunction对原key-value对执行计算，并将计算结果作为该key-value对的value值
+void replaceAll(BiFunction function)
+```
+
+示范：
+
+```java
+@Test
+public void MapTest() {
+    Map<String,Object> map = new HashMap<>();
+    map.put("a", 1);
+    map.put("bb", 22);
+    map.put("ccc", 333);
+    //key不存在则不会添加，而是返回null
+    map.replace("dddd", 4444);
+    System.out.println(map);//{bb=22, a=1, ccc=333}
+
+    //使用原value与传入参数计算出行value替换原value
+    map.merge("bb", 10, (oldVal, param) -> (Integer)oldVal * (Integer)param);
+    System.out.println(map);//{bb=220, a=1, ccc=333}
+
+    //map中不存在key则添加一组key-value对
+    map.computeIfAbsent("ee", key -> key.length());
+    System.out.println(map);//{ee=2, bb=220, a=1, ccc=333}
+
+    //根据旧key、value计算一个新value,新value不为null则替换
+    map.computeIfPresent("ee", (key, value) -> (Integer)value * (Integer)value);
+    System.out.println(map);//{ee=4, bb=220, a=1, ccc=333}
+}
+```
+
 #### 改进的HashMap和HashTable实现类
+
+
 
 #### 改进的类型推断
 
@@ -731,14 +926,13 @@ public void CollectionStreamTest() {
 
 java.util.function包下预定义了大量函数式接口，典型的包含如下4类接口：
 
-> XxxFunciton：这类接口中通常包含一个apply（）抽象方法，该方法对参数进行处理、转换（apply()方法的处理逻辑有Lambda表达式来实现），然后返回一个新的值。该函数式接口通常用于对指定数据进行转换处理。
->
-> XxxConsumer：这类接口中通常包含一个accept（）抽象方法，该方法与XxxFunciton接口中的apply（）方法基本相似，也负责对参数进行处理，只是改方法不会返回处理结果。
->
-> XxxPredicate：这类接口中通常包含一个test（）抽象方法，该方法通常用来对参数进行某种判断（test()方法的判断逻辑由Lambda表达式来实现），然后返回一个boolean值。该接口通常用于判断参数是否满足特定条件，经常用于进行筛滤数据。
->
-> XxxSupplier：这类接口中通常包含一个getAsXxx()抽象方法，该方法不需要输入参数，该方法会按某种逻辑算法（getAsXxx()方法的逻辑算法有Lambda表达式来实现）返回一个数据.
->
+XxxFunciton：这类接口中通常包含一个apply（）抽象方法，该方法对参数进行处理、转换（apply()方法的处理逻辑有Lambda表达式来实现），然后返回一个新的值。该函数式接口通常用于对指定数据进行转换处理。
+
+XxxConsumer：这类接口中通常包含一个accept（）抽象方法，该方法与XxxFunciton接口中的apply（）方法基本相似，也负责对参数进行处理，只是改方法不会返回处理结果。
+
+XxxPredicate：这类接口中通常包含一个test（）抽象方法，该方法通常用来对参数进行某种判断（test()方法的判断逻辑由Lambda表达式来实现），然后返回一个boolean值。该接口通常用于判断参数是否满足特定条件，经常用于进行筛滤数据。
+
+XxxSupplier：这类接口中通常包含一个getAsXxx()抽象方法，该方法不需要输入参数，该方法会按某种逻辑算法（getAsXxx()方法的逻辑算法有Lambda表达式来实现）返回一个数据.
 
 
 

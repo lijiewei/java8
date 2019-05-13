@@ -18,7 +18,6 @@
 - 新增的Stream操作集合
 - 改进的List接口和ListIterator接口
 - 为Map新增的方法
-- 改进的HashMap和HashTable实现类
 - 改进的类型推断
 - 函数式接口与@FunctionalInterface
 - 新增的重复注释
@@ -914,11 +913,42 @@ public void MapTest() {
 }
 ```
 
-#### 改进的HashMap和HashTable实现类
-
-
-
 #### 改进的类型推断
+
+1. 可通过调用方法的上下文来推断泛型的目标类型
+2. 可在方法调用链中，将推断得到的泛型传递到最后一个方法
+
+```java
+public class MyUtil<E> {
+
+    public static <T> MyUtil<T> get1(){
+        return null;
+    }
+
+    public static <T> MyUtil<T> get2(T head, MyUtil<T> instal){
+        return null;
+    }
+
+    E head(){
+        return null;
+    }
+}
+```
+
+```java
+@Test
+public void InferenceTest() {
+    //通过方法赋值的目标参数来推断泛型类型为String
+    MyUtil<String> install = MyUtil.get1();
+    //无须使用下面语句在调用get1()方法时指定泛型的类型
+    //MyUtil<String> install2 = MyUtil.<String>get1();
+
+    //可调用get2()方法所需的参数类型来推断泛型为Integer
+    MyUtil.get2(42, MyUtil.get1());
+    //无须使用下面语句在调用get2()方法时指定泛型的类型
+    //MyUtil.get2(42, MyUtil.<Integer>get1());
+}
+```
 
 #### 函数式接口与@FunctionalInterface
 
@@ -940,9 +970,192 @@ XxxSupplier：这类接口中通常包含一个getAsXxx()抽象方法，该方�
 
 #### 新增的重复注释
 
+Java8以前，同一个程序元素前最多只能使用一个相同类型的注解；如果需要在同一个元素前使用多个相同类型的注解，则必须使用注解“容器”。
+
+如：Struts2 中的@Result注解,@Results作为容器
+
+```java
+
+@Results({@Result(name="failure", locatino="failed.jsp"),
+         @Result(name="success", locatino="success.jsp")})
+public Action FooActino{...}
+```
+
+Java8后，可能简化为如下形式（之所以说可能，是因为重复注解还需要对原来的注解进行改造）：
+
+```java
+@Result(name="failure", locatino="failed.jsp")
+@Result(name="success", locatino="success.jsp")
+public Action FooActino{...}
+```
+
+开发重复注解需要使用@Repeatable修饰，重复注解只是一种简化写法，这种简化写法是一种假象：多个重复注解其实会被作为“容器”注解的value成员变量的数组元素
+
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Repeatable(FKTags.class)
+public @interface FKTag {
+
+    //为注解定义2个成员变量
+    String name() default "zhangsan";
+    int age();
+}
+```
+
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface FKTags {
+
+    //定义value成员变量，该成员变量可接受多个@FkTag注解
+    FKTag[] value();
+}
+```
+
+```java
+//使用方式一
+@FKTag(age=20)
+@FKTag(name="wangwu", age=24)
+public class FkTagTest{...}
+
+//使用方式二
+@FkTags({@FKTag(age=20)
+@FKTag(name="wangwu", age=24)}）
+public class FkTagTest{...}
+```
+
+
+
 #### 新增的类型注释
 
+ElementType枚举增加了TYPE_PARAMETER、TYPE_USE两个枚举值，这样就允许定义枚举时使用@Target(ElementType.TYPE_USE)修饰，这种注解被称为类型注解（Type Annotation）,类型注解可用于修饰在任何地方出现的类型，如：
+
+- 创建对象（用new关键字创建）
+- 类型转换
+- 使用implements实现接口
+- 使用throws声明抛出异常
+
+```java
+@Target(ElementType.TYPE_USE)
+public @interface NotNull {
+}
+```
+
+```java
+/**定义类时使用类型注解*/
+@NotNull
+public class TypeAnnotationTest implements @NotNull/**implements时使用类型注解*/ Serializable {
+    //方法形参中使用类型注解
+    @Test
+    public void Test(@NotNull String name) throws /**throws时使用类型注解*/ @NotNull Exception {
+           Object obj = "ljw.com";
+           //强制类型转换时使用类型注解
+        String str = (@NotNull String)obj;
+        //创建对象时使用类型注解
+        Object win = new @NotNull String();
+    }
+    //泛型中使用类型注解
+    public void foo(List<@NotNull String> info){}
+}
+```
+
 #### 改进的线程池
+
+Java5新增了一个Executors工厂类来产生线程池，该工厂类包含如下几个静态工厂方法来创建线程池
+
+```java
+//创建一个具有缓存功能的线程池，系统根据需要创建线程，这些线程将会被缓存在线程池中
+static ExecutorService newCachedThreadPool()
+    
+//创建一个可重用、具有固定线程数的线程池
+static ExecutorService newFixedThreadPool(int nThreads)
+
+//创建只有一个线程的线程池，它相当于调用newFixedThreadPool方法时传入参数为1
+static ExecutorService newSingleThreadExecutor()
+
+//创建具有指定数线程数的线程池，它可以在指定延迟后执行线程任务，corePoolSize指线程中所保存的线程数，即使线程是空闲的也被保存在线程池内
+static ScheduledExecutorService newScheduledThreadPool(int corePoolSize)
+    
+//创建只有一个线程的线程池，它可以在指定延迟后执行线程任务
+static ScheduledExecutorService newSingleThreadScheduledExecutor()
+```
+
+**Java8新增：**
+
+```java
+//创建持有足够的线程的线程池来支持给定的并行级别，该方法还会使用多个队列来减少竞争
+static ExecutorService newWorkStealingPool(int parallelism)
+
+//该方法是前一个方法的简化版。如果当前机器有4个CPU，则目标并行级别被设置为4，也就是相当于为前一个方法传入4作为参数
+static ExecutorService newWorkStealingPool()
+```
+
+**总结**：
+
+前三个方法返回ExecutorService对象，可以执行Runnable对象或Callable对象
+
+中间两个方法返回ScheduledExecutorService，是ExecutorService子类，可以在指定延迟后执行任务
+
+最后两个方法，利用了多CPU并行能力
+
+
+
+ExecutorService代表尽快执行线程，有如下三个方法：
+
+```java
+//将一个Runnable对象提交给指定的线程池，线程池将在有空闲线程时执行Runnable对象代表的任务。其中Future对象代表Runnable任务的返回值--但run（）方法没有返回值，所以Future对象将在run()方法执行结束后返回null.但可以调用Future的isDone()、isCancelled方法来获取Runnable对象的执行状态
+Future<？> submit(Runnable task)
+    
+//将一个Runnable对象提交给指定的线程池，线程池将在有空闲线程时执行Runnable对象代表的任务。其中result显示指定线程执行结束后的返回值，所以Future对象将在run()方法执行结束后返回result
+<T> Future<T> submit(Runnable task, T result)
+    
+//将一个Callable对象提交给指定的线程池，线程池将在有空闲线程时执行Callable对象代表的任务。其中Future对象代表Callable任务的返回值
+<T> Future<T> submit(Callable<T> task)
+```
+
+ScheduledExecutorService代表在指定延迟后或周期性地执行线程任务，有如下4个方法：
+
+```java
+//指定callable任务将在delay延迟后执行
+<V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit)
+
+//指定command任务将在delay延迟后执行
+ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit)
+
+//指定command任务将在delay延迟后执行，而且以设定频率重复执行。也就是说，在initialDelay后开始执行，依次在initialDelay+period、initialDelay+2*period。。。处重复执行
+ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit)
+
+//创建并执行一个在给定初始延迟后首次启用的定期操作，随后在每一次执行终止和下一次执行开始之间都存在给定的延迟。如果任务在任一次执行时遇到异常，就会取消后续执行；否则，只能通过程序来显示取消或终止任务
+ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit)
+    
+```
+
+线程池执行线程任务步骤：
+
+1. 调用Executors类的静态工厂方法创建一个ExecutorService对象，该对象代表一个线程池
+2. 创建Runnable实现类或Callable实现类的实列，作为线程执行任务
+3. 调用ExecutorService对象的submit()方法来提交Runnable实列或Callable实列
+4. 当不想提交任何任务时，调用ExecutorService对象的shutdown()方法来关闭线程池
+
+```java
+@Test
+public void ThreadPoolTest() {
+    //创建一个ExecutorService对象
+    ExecutorService executorService = Executors.newWorkStealingPool();
+    //创建Runnable实现类的实列
+    Runnable target = () -> {
+        for (int i = 0; i < 100; i++){
+            System.out.println(Thread.currentThread().getName() + "的i值位：" + i);
+        }
+    };
+    //提交Runnable实列
+    executorService.submit(target);
+    executorService.submit(target);
+    //关闭线程池
+    executorService.shutdown();
+}
+```
 
 #### 增强的ForkJoinPool
 

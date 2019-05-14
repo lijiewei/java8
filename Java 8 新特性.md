@@ -1159,4 +1159,189 @@ public void ThreadPoolTest() {
 
 #### 增强的ForkJoinPool
 
+Java7提供了ForkJoinPool来支持将一个任务拆分成多个“小任务”并行计算，再把多个“小任务”的结果合并成总的计算结果。ForkJoinPool是ExecutorService的实现类，因此是一种特殊的线程池。
+
+ForkJoinPool常用构造器：
+
+~~~java
+
+```java
+//创建一个保护parallelism个并行线程的ForkJoinPool。
+ForkJoinPool（int parallelism）
+```
+
+//以Runtime.availableProcessors()方法的返回值作为parallelism参数来创建ForkJoinPool
+ForkJoinPool（）
+~~~
+
+Java8为ForkJoinPool增加了通用池功能。ForkJoinPool类通过如下两个静态方法提供通用池功能：
+
+```java
+//该方法返回一个通用池，通用池的运行状态不会受shutdown（）或shutdownNow()方法的影响。
+ForkJoinPool commonPool()
+
+//该方法返回通用池的并行级别
+int getCommonPoolParallelism()
+```
+
+创建了ForkJoinPool实例后，可调用ForkJoinPool的submit(ForkJoinTask task)或invoke(ForkJoinTask task)方法来执行指定任务了。其中ForkJoinTask代表一个可以并行、合并的任务。
+
+ForkJoinTask是一个抽象类，有两个抽象子类：RecursiveAction和RecursiveTask。其中RecursiveTask代表有返回值的任务，RecursiveAction代表没有返回值的任务
+
+Future<T>  <--  ForkJoinTask<T>  <--  RecursiveAction/RecursiveTask
+
+Executor  <--  ExecutorService  <--  AbstractExecutorService  <--  ForkJoinPool
+
+```java
+public class RecursiveActionTask extends RecursiveAction {
+
+    //每个小任务最多打印50个数
+    private static final int THRESHOLD = 50;
+    private int start,end;
+
+    //打印从start到end任务
+    public RecursiveActionTask(int start, int end) {
+        this.start = start;
+        this.end = end;
+    }
+
+    @Override
+    protected void compute() {
+        //当end与start之间的差小于THRESHOLD时开始打印
+        if(end - start < THRESHOLD){
+            for (int i = start; i < end; i++){
+                System.out.println(Thread.currentThread().getName() + "的i值：" + i);
+            }
+        }else{//将大任务分解成小任务
+            int middle = (start + end) / 2;
+            RecursiveActionTask left = new RecursiveActionTask(start, middle);
+            RecursiveActionTask right = new RecursiveActionTask(middle, end);
+            //并行执行两个小任务
+            left.fork();
+            right.fork();
+        }
+    }
+}
+```
+
+```java
+public class RecursiveTaskTask extends RecursiveTask<Integer> {
+
+    //每个小任务最多累加20个数
+    private static final int THRESHOLD = 20;
+    private int[] arr;
+    private int start,end;
+
+    //累加从start到end数组元素
+    public RecursiveTaskTask(int[] arr, int start, int end) {
+        this.arr = arr;
+        this.start = start;
+        this.end = end;
+    }
+
+    @Override
+    protected Integer compute() {
+        int sum = 0;
+        //当end与start之间的差小于THRESHOLD时开始累加
+        if(end - start < THRESHOLD){
+            for (int i = start; i < end; i++) {
+                sum += arr[i];
+            }
+            return sum;
+        }else{//将大任务分解成小任务
+            int middle = (start + end) / 2;
+            RecursiveTaskTask left = new RecursiveTaskTask(arr, start, middle);
+            RecursiveTaskTask right = new RecursiveTaskTask(arr, middle, end);
+            //并行执行两个小任务
+            left.fork();
+            right.fork();
+            //把两个小任务的结果相加
+            return left.join() + right.join();
+        }
+    }
+}
+```
+
+```java
+@Test
+public void RecursiveActionTest() throws InterruptedException {
+    //创建一个通用池
+    ForkJoinPool pool = new ForkJoinPool();
+    //提交可分解的printTask任务
+    pool.submit(new RecursiveActionTask(0, 300));
+    pool.awaitTermination(2, TimeUnit.SECONDS);
+    pool.shutdown();
+}
+
+@Test
+public void RecursiveTaskTaskTest() throws InterruptedException, ExecutionException {
+    int[] arr = new int[100];
+    Random rand = new Random();
+    int total = 0;
+    for (int i = 0, len = arr.length; i < len; i++) {
+        int tmp = rand.nextInt(20);
+        total += (arr[i] = tmp);
+    }
+    System.out.println("total:" + total);
+
+    //创建一个通用池
+    ForkJoinPool pool = new ForkJoinPool();
+    //提交可分解的printTask任务
+    Future<Integer> future = pool.submit(new RecursiveTaskTask(arr, 0, arr.length));
+    System.out.println(future.get());
+    pool.shutdown();
+}
+```
+
 #### 新增的方法参数反射
+
+Java8在java.lang.reflect包下新增了一个Executable抽象基类，该对象代表可执行的类成员，该类派生了Constructor、Method两个子类
+
+Executable提供方法：
+
+```java
+
+//该方法或构造器是否包含数量可变的形参
+boolean isVarArgs()
+    
+//获取该方法或构造器的修饰符
+abstract int getModifiers()
+
+//获取该方法或构造器的形参个数
+int getParameterCount() 
+
+//获取该方法或构造器的所有形参
+Parameter[] getParameters()
+```
+
+Parameter也是Java8新增的API,每个Parameter对象代表方法或者构造器的一个参数
+
+Parameter提供方法：
+
+```java
+//获取修饰该形参的修饰符
+int getModifiers()
+    
+String getName()
+//获取形参名
+    
+Type getParameterizedType() 
+//获取带泛型的形参类型
+    
+Class<?> getType() 
+//获取形参类型
+    
+boolean isNamePresent()
+//该方法返回该类的class文件中是否包含了方法的形参名信息
+    
+boolean isVarArgs()
+//该方法用于判断该参数是否为个数可变的形参
+    
+```
+
+使用javac命令编译java源文件时，默认生产的class文件并不包含方法的形参名信息，因此调用isNamePresent（）方法返回false，调用getName()方法也不能得到该参数的形参名。
+
+如果希望javac命令编译java源文件时可以保留形参信息，则需要为该命令指定-parameters选项
+
+> 如：javac -parameters -d . myClass.java
+
